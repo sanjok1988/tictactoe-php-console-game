@@ -1,16 +1,16 @@
 <?php
 $board = new Board();
-$board->updateBoard();
+print("\nInstruction: Marking example: 23 \n");
+$board->start();
 
 class Board
 {
-    public $board = [];
-    public $mark = [];
     public $n = 3;
     public $conditions = [];
-    public $player_X = [];
-    public $player_Y = [];
+    public $player_X = []; //1
+    public $player_Y = []; //2
     public $cell = [];
+    public $result = [];
 
     public function __construct()
     {
@@ -22,52 +22,23 @@ class Board
         for ($r = 0; $r < $this->n; $r++) {
             for ($c = 0; $c < $this->n; $c++) {
                 $this->cell[] = $r . $c;
-
+                $this->result[] = $r . $c;
             }
         }
     }
 
-    public function updateBoard()
+    public function updateBoard($item, int $player = 1)
     {
-        //neutralize
-        $markCount = 0;
-
-        $n = $this->n;
-        for ($r = 0; $r < $n; $r++) {
-            for ($c = 0; $c < $n; $c++) {
-                if ($this->hasMark([$r, $c])) {
-                    if (in_array($r . $c, $this->player_X)) {
-                        print('XX ');
-                    } else {
-                        print('YY ');
-                    }
-                    $markCount++;
-                } else {
-                    print($r . "" . $c . " ");
-                }
+        $index = array_search($item, $this->result);
+        $mark = $player == 1 ?'XX':'YY';
+        $this->result[$index] = $mark;
+        foreach($this->result as $i => $r){
+            if($i%$this->n == 0){
+                print("\n");
             }
-            print("\n");
+            print($r." ");
         }
-
-        if ($markCount >= 5) {//5
-            print("\nchecking result =======> \n");
-
-            if ($this->checkResult($this->player_X)) {
-                print("player X won the game");
-                exit();
-            }
-            if ($this->checkResult($this->player_Y)) {
-                print("player Y won the game");
-                exit();
-            }
-            print("mark " . $markCount);
-        }
-        $this->mark();
-    }
-
-    public function hasMark(array $mark)
-    {
-        return in_array($mark, $this->mark);
+        print("\n");
     }
 
     public function checkResult(array $player)
@@ -113,16 +84,16 @@ class Board
         }
 
         if ($first + 11 == $x) {
-            print("\n probability: Diagonal Matching\n");
+            print("\n Hint: Match Diagonally\n");
             return 11;
         } elseif ($first + 9 == $x) {
-            print("\n probability: Diagonal Matching\n");
+            print("\n Hint: Match Diagonally\n");
             return 9;
         } elseif ($first + 10 == $x) {
-            print("\n probability: Vertical Matching\n");
+            print("\n Hint: Match Vertically\n");
             return 10;
         } elseif ($first + 1 == $x) {
-            print("\n probability: Horizontal Matching\n");
+            print("\n Hint: Match Horizontally\n");
             return 1;
         }
 
@@ -130,20 +101,43 @@ class Board
         return $this->checkResult($newSet);
     }
 
-    public function mark()
+    public function start()
     {
         $this->player_1();
-
         $this->player_2();
-        $this->updateBoard();
+        $this->start();
+    }
+
+    public function check($player)
+    {
+        $n = $this->n;
+        if (count($this->cell) < ($n*$n - 5)) {
+            print("\nchecking result ... ... ... \n");
+
+            if($player == 1){
+                $playerMarks = $this->player_X;
+            }
+            if($player == 2){
+                $playerMarks = $this->player_Y;
+            }
+            if ($this->checkResult($playerMarks)) {
+                $this->output("player ".$player." won the game");
+            }
+        }
+    }
+
+    public function output($msg)
+    {
+        print("\n\n************************************\n****** ".$msg." *******\n************************************");
+        exit();
     }
 
     public function generateRandomMark()
     {
-        if(!count($this->cell)){
-                print("The game is draw. Do you want to try again?");
-                exit();
+        if(count($this->cell) == 0){
+            $this->output(" This game is draw.  ");
         }
+
         $num = array_rand($this->cell, 1);
         $ar = str_split($this->cell[$num]);
         unset($this->cell[$num]);
@@ -152,22 +146,27 @@ class Board
 
     public function player_1()
     {
-        print("\neg: 23 -- Player 1 Turn Mark :");
-        print("\n\n");
+        print("\nPlayer 1:\n--------------");
 //        $input = readline(); //r,c
-//        $ar = explode('', $input);
 //        $ar = str_split((string)$input);
         list($r, $c) = $this->generateRandomMark();
-        $ar = [$r, $c];
-        $this->mark[] = $ar;
+        $this->mark[] = [$r, $c];
+//        $this->player_X[] = $ar;
         $this->player_X[] = $r . $c;
 
+        $this->updateBoard($r.$c, 1);
+        $this->check(1);
     }
+
     public function player_2()
     {
+        print("\nPlayer 2:\n--------------");
         list($r, $c) = $this->generateRandomMark();
         $this->mark[] = [$r, $c];
         $this->player_Y[] = $r . $c;
+
+        $this->updateBoard($r.$c, 2);
+        $this->check(2);
     }
 
     //possible combination of matching
